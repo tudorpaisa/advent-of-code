@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	// "regexp"
 )
 
 
@@ -235,6 +234,7 @@ func solution2(data []string) int {
         idx := i*2
         wg.Add(1)
         go goComputeSeedMappings(seeds[idx : idx+2], maps, ch, &wg)
+        // running one goroutine at a time; else the RAM will explode
         wg.Wait()
     }
 
