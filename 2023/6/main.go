@@ -44,43 +44,33 @@ func computeDistance(holdTime int, raceTime int) int {
 
 func isRaceWin(holdTime int, raceRecord RaceRecord) bool {
 	// NOTE: maybe >= is not a good idea
-	return computeDistance(holdTime, raceRecord.time) >= raceRecord.distance
+	return computeDistance(holdTime, raceRecord.time) > raceRecord.distance
 }
 
 func searchLowerBound(holdTimes []int, raceRecord RaceRecord, pb RaceRecord) RaceRecord {
-	if len(holdTimes) == 0 {
-		return pb
-	}
-	// find min holdTime that gives a win
-	var mid int = len(holdTimes) / 2
+	for _, i := range holdTimes {
+		if isRaceWin(i, raceRecord) {
+			// return pb
+			if i < pb.time {
+				return RaceRecord{i, computeDistance(i, raceRecord.time)}
+			}
 
-	if isRaceWin(mid, raceRecord) {
-		if mid < pb.time {
-			pb = RaceRecord{mid, computeDistance(mid, raceRecord.time)}
 		}
-
-		return searchLowerBound(holdTimes[:mid], raceRecord, pb)
 	}
-
-	return searchLowerBound(holdTimes[mid+1:], raceRecord, pb)
+	return pb
 }
 
 func searchUpperBound(holdTimes []int, raceRecord RaceRecord, pb RaceRecord) RaceRecord {
-	if len(holdTimes) == 0 {
-		return pb
-	}
-	// find max holdTime that gives a win
-	var mid int = len(holdTimes) / 2
+	for i := len(holdTimes)-1; i>=0; i-- {
+	// for _, i := range holdTimes {
+		if isRaceWin(holdTimes[i], raceRecord) {
+			if i > pb.time {
+				return RaceRecord{i, computeDistance(holdTimes[i], raceRecord.time)}
+			}
 
-	if isRaceWin(mid, raceRecord) {
-		if mid > pb.time {
-			pb = RaceRecord{mid, computeDistance(mid, raceRecord.time)}
 		}
-
-		return searchUpperBound(holdTimes[mid+1:], raceRecord, pb)
 	}
-
-	return searchUpperBound(holdTimes[:mid], raceRecord, pb)
+	return pb
 }
 
 func genArr(a int) []int {
@@ -91,24 +81,54 @@ func genArr(a int) []int {
 	return out
 }
 
+func product(a []int) int {
+	out := 1
+	for _, i := range a {
+		out *= i
+	}
+	return out
+}
+
 func solution1(data []RaceRecord) int {
+	diffs := *new([]int)
 	for _, i := range data {
 		holdTimes := genArr(i.time + 1)
 		lower := searchLowerBound(holdTimes, i, RaceRecord{i.time,0})
 		upper := searchUpperBound(holdTimes, i, RaceRecord{0,0})
-		fmt.Printf("Result %d, %d (%d)\n", lower, upper, upper.time - lower.time)
-
+		diff := upper.time - lower.time + 1
+		diffs = append(diffs, diff)
+		fmt.Printf("Result %d, %d (%d)\n", lower, upper, diff)
 	}
-	return 0
+
+	return product(diffs)
+}
+
+func solution2(data []RaceRecord) []int {
+	diffs := *new([]int)
+	for _, i := range data {
+		holdTimes := genArr(i.time + 1)
+		lower := searchLowerBound(holdTimes, i, RaceRecord{i.time,0})
+		highTime := i.time - lower.time
+		upper := RaceRecord{highTime, computeDistance(highTime, i.time)}
+		diff := upper.time - lower.time + 1
+		diffs = append(diffs, diff)
+		fmt.Printf("Result %d, %d (%d)\n", lower, upper, diff)
+	}
+
+	return diffs
 }
 
 func main() {
 	data := []RaceRecord {
-		{7, 9},
-		{15, 40},
-		{30, 200},
+		{40, 277},
+		{82, 1338},
+		{91, 1349},
+		{66, 1063},
+		{71530, 940200},
+		{40829166, 277133813491063},
 	}
 
 	fmt.Printf("Solution 1: %d\n", solution1(data))
+	fmt.Printf("Solution 2: %d\n", solution2(data))
 }
 
