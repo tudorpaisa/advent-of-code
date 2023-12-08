@@ -97,6 +97,33 @@ func allNodesEndWithZ(nodes []string) bool {
 	return true
 }
 
+func getNodeEndingWithZ(nodes []string) (int, bool) {
+	for idx, i := range nodes {
+		if string(i[len(i)-1]) == "Z" {
+			return idx, true
+		}
+	}
+
+	return -1, false
+}
+
+func allFilled(a []int) bool {
+	for _, i := range a { if i <= 0 { return false } }
+	return true
+}
+
+func gcd(a int, b int) int {
+	if a < 1 || b < 1 { panic("a/b is less than 1") }
+	for b != 0 {
+		a, b = b, a % b
+	}
+	return a
+}
+
+func lcm(a int, b int) int {
+	if a == 0 || b == 0 { return 0 }
+	return (a*b) / gcd(a, b)
+}
 
 func traverseInstructionsUntilEndsWithZ(
 	instructions string,
@@ -105,7 +132,11 @@ func traverseInstructionsUntilEndsWithZ(
 
 	i := 0
 	nSteps := 0
-	currentNodes := startNodes
+	currentNodes := *new([]string)
+	for _, i := range startNodes {
+		currentNodes = append(currentNodes, i)
+	}
+	nStepsNode := make([]int, len(startNodes))
 
 	instructMap := make(map[string]int)
 	instructMap["L"] = 0
@@ -117,8 +148,14 @@ func traverseInstructionsUntilEndsWithZ(
 			i = 0
 		}
 
-		// reached destination
-		if allNodesEndWithZ(currentNodes) {break}
+		if x, ok := getNodeEndingWithZ(currentNodes); ok {
+
+			nStepsNode[x] = nSteps
+
+			if allFilled(nStepsNode) {
+				break
+			}
+		}
 
 		for idx, cNode := range currentNodes {
 			nextInstruct := string(instructions[i])
@@ -126,18 +163,18 @@ func traverseInstructionsUntilEndsWithZ(
 			newNode := nodes[cNode][nextIdx]
 			currentNodes[idx] = newNode
 		}
-
-		// if nSteps % 1000 == 0 {
-		// 	printTraversalStatus(currentNodes, nSteps)
-		// }
-
 		i++
 		nSteps++
-		fmt.Printf("Steps=%d Nodes=%s\r", nSteps, currentNodes)
 	}
-	fmt.Printf("\n")
 
-	return nSteps
+	// LCM works because each XXA node will only cross its designated XXZ node
+	// For example, BFA will only reach BFZ and not GBZ/ZZZ/SAZ/etc.
+	out := 1
+	for _, i := range nStepsNode {
+		out = lcm(out, i)
+	}
+
+	return out
 }
 
 func getAllNodesEndingWith(nodes map[string][]string, endsWith string) []string {
@@ -184,9 +221,6 @@ func solution1(data []string) int {
 	instructions := data[0]
 	nodesRaw := data[1:]
 
-	// fmt.Println(instructions)
-	// fmt.Println(nodes)
-
 	nodes := parseNodes(nodesRaw)
 	nSteps := traverseInstructions(instructions, nodes, "AAA", "ZZZ")
 
@@ -199,7 +233,6 @@ func solution2(data []string) int {
 
 	nodes := parseNodes(nodesRaw)
 	startNodes := getAllNodesEndingWith(nodes, "A")
-	fmt.Println(startNodes)
 	nSteps := traverseInstructionsUntilEndsWithZ(instructions, nodes, startNodes)
 
 	return nSteps
@@ -210,4 +243,3 @@ func main() {
 	fmt.Printf("Solution 1: %d\n", solution1(readLines("input1.txt")))
 	fmt.Printf("Solution 2: %d\n", solution2(readLines("input1.txt")))
 }
-
