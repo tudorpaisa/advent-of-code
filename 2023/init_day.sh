@@ -53,8 +53,19 @@ func readLines(fname string) []string {
 	return out
 }
 
+func solution1(data []string) int {
+	return 0
+}
+
+func solution2(data []string) int {
+	return 0
+}
+
+
 func main() {
-	readLines(\"input1.txt\")
+	data := readLines(\"input1.txt\")
+	fmt.Printf(\"Solution 1: %d\n\", solution1(data))
+	fmt.Printf(\"Solution 2: %d\n\", solution2(data))
 }
 " > main.go
 
