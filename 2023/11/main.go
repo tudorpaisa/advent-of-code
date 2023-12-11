@@ -55,7 +55,6 @@ func isEmptyColumn(data []string, colIdx int) bool {
 	return true
 }
 
-
 func getAllEmptyColumnIndex(data []string) []int {
 	out := []int{}
 
@@ -70,51 +69,41 @@ func getAllEmptyColumnIndex(data []string) []int {
 
 func expandRows(data []string, emptyRows []int, multiplier int) []string {
 	increment := 0
-	for _, rowIdx := range emptyRows {
+	for x, rowIdx := range emptyRows {
+		fmt.Printf("Expanding rows: %d/%d\r", x+1, len(emptyRows))
+		for i := 0; i < multiplier - 1; i++ {
 
-		fmt.Printf("data:\n%s\n", data)
-		var secondHalf []string
-		var firstHalf []string
-		copy(secondHalf, data[rowIdx + 1 + increment:])
-		copy(firstHalf, data[:rowIdx + increment])
+			data = append(data[:rowIdx + 1 + increment], data[rowIdx + increment:]...)
 
-		for i := 0; i < multiplier; i++ {
-			firstHalf = append(firstHalf, data[rowIdx])
+			increment = increment + 1
+
 		}
+	}
+	fmt.Print("\n")
+	return data
+}
 
-		fmt.Printf("first half:\n%s\n", firstHalf)
-		fmt.Printf("second half:\n%s\n", secondHalf)
-		data = append(firstHalf, secondHalf...)
-
-		// data = append(data[:rowIdx + 1 + increment], data[rowIdx + increment:]...)
-
+func expandColumns(data []string, emptyColumns []int, multiplier int) []string {
+	increment := 0
+	// yikes... i don't like this, but it's clear what's happening
+	for x, colIdx := range emptyColumns {
+		fmt.Printf("Expanding columns: %d/%d\r", x+1, len(emptyColumns))
+		for i, row := range data {
+			multipliedString := strings.Repeat(".", multiplier-1)
+			data[i] = row[:colIdx+increment] + multipliedString + row[colIdx+increment:]
+		}
 		increment = increment + multiplier - 1
 	}
-	printUniverse(data)
+	fmt.Print("\n")
 	return data
 }
 
-func expandColumns(data []string, emptyColumns []int) []string {
-	increment := 0
-	// ooof... i don't like this, but it's clear what's happening
-	for _, colIdx := range emptyColumns {
-		for i, row := range data {
-			data[i] = row[:colIdx+increment] + string(row[colIdx+increment]) + row[colIdx+increment:]
-		}
-		increment++
-	}
-	// printUniverse(data)
-	return data
-}
-
-func expandUniverse(data []string) []string {
+func expandUniverse(data []string, multiplier int) []string {
 	emptyRows := getAllEmptyRowIndex(data)
 	emptyColumns := getAllEmptyColumnIndex(data)
 
-	// fmt.Printf("Empty rows: %d\n", emptyRows)
-	// fmt.Printf("Empty columns: %d\n", emptyColumns)
-	data = expandRows(data, emptyRows, 2)
-	data = expandColumns(data, emptyColumns)
+	data = expandColumns(data, emptyColumns, multiplier)
+	data = expandRows(data, emptyRows, multiplier)
 	return data
 }
 
@@ -167,6 +156,66 @@ func calculateDistances(locations map[int][]int) map[string]int {
 	return dist
 }
 
+func findValuesInRange(a []int, low int, high int) []int {
+	out := []int{}
+	if low > high {
+		low, high = high, low
+	}
+
+	for _, i := range a {
+		if i > low && i < high {
+			out = append(out, i)
+		}
+	}
+	return out
+}
+
+func calculateDistancesWithExpansion(locations map[int][]int, emptyRows []int, emptyColumns []int, expansionMultiplier int) map[string]int {
+	dist := make(map[string]int)
+
+	for a, coordsA := range locations {
+		for b, coordsB := range locations {
+
+			aBPairName := namePair(a, b)
+			bAPairName := namePair(b, a)
+
+			if a == b {
+				continue
+			}
+
+			spacesBetweenX := findValuesInRange(emptyColumns, coordsA[0], coordsB[0])
+			spacesBetweenY := findValuesInRange(emptyRows, coordsA[1], coordsB[1])
+
+			var xA int
+			var yA int
+			if coordsA[0] < coordsB[0] {
+				xA = coordsA[0] - ( ( len(spacesBetweenX) * expansionMultiplier ) - len(spacesBetweenX) )
+			} else {
+				xA = coordsA[0] + ( ( len(spacesBetweenX) * expansionMultiplier ) - len(spacesBetweenX) )
+
+			}
+			if coordsA[1] < coordsB[1] {
+				yA = coordsA[1] - ( ( len(spacesBetweenY) * expansionMultiplier ) - len(spacesBetweenY) )
+			} else {
+				yA = coordsA[1] + ( ( len(spacesBetweenY) * expansionMultiplier ) - len(spacesBetweenY) )
+
+			}
+
+			x := manhattanDist([]int{xA, yA}, coordsB)
+
+			// sanity check because go gave me a few scares here
+			dist[aBPairName] = x
+			if val, ok := dist[bAPairName]; ok {
+				if val != x {
+					panic(fmt.Sprintf("VALUES DIFFER: %d - %d\n", val, x))
+				}
+			}
+		}
+	}
+
+	return dist
+}
+
 func printUniverse(data []string) {
 	for _, i := range data {
 		fmt.Printf("%s\n", i)
@@ -174,7 +223,7 @@ func printUniverse(data []string) {
 }
 
 func solution1(data []string) int {
-	data = expandUniverse(data)
+	data = expandUniverse(data, 2)
 	universeLocations := findUniverses(data)
 	distances := calculateDistances(universeLocations)
 
@@ -186,13 +235,21 @@ func solution1(data []string) int {
 }
 
 func solution2(data []string) int {
-	return 0
-}
+	emptyRows := getAllEmptyRowIndex(data)
+	emptyColumns := getAllEmptyColumnIndex(data)
+	universeLocations := findUniverses(data)
+	distances := calculateDistancesWithExpansion(universeLocations, emptyRows, emptyColumns, 1000000)
 
+	out := 0
+	for _, v := range distances {
+		out += v
+	}
+	return out / 2
+}
 
 func main() {
-	data := readLines("input2.txt")
+	data := readLines("input1.txt")
 	fmt.Printf("Solution 1: %d\n", solution1(data))
+	data = readLines("input1.txt")
 	fmt.Printf("Solution 2: %d\n", solution2(data))
 }
-
