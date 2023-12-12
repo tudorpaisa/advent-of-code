@@ -41,7 +41,7 @@ func readFileRaw(fname string) string {
 }
 
 func readLines(fname string) []string {
-	var data []string = strings.Split(readFileRaw(fname), \"\n\")
+	var data []string = strings.Split(readFileRaw(fname), \"\\n\")
 	var out []string = *new([]string)
 
 	for _, row := range data {
@@ -64,8 +64,8 @@ func solution2(data []string) int {
 
 func main() {
 	data := readLines(\"input1.txt\")
-	fmt.Printf(\"Solution 1: %d\n\", solution1(data))
-	fmt.Printf(\"Solution 2: %d\n\", solution2(data))
+	fmt.Printf(\"Solution 1: %d\\n\", solution1(data))
+	fmt.Printf(\"Solution 2: %d\\n\", solution2(data))
 }
 " > main.go
 
