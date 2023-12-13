@@ -54,16 +54,46 @@ func transpose(a []string) []string {
 	return out
 }
 
-func scanMirror(data []string) (int, int) {
-	max := -1
-	bestIdx := -1
+func scanMirror2(data []string, tol int) []int {
+	// this counts ALL mirror lengths
+	// if tol == 0 we'll get just 1 result
+	// if tol == 1 we'll get 2
+	// etc...
+	bestIndices := []int{}
 	for i := 1; i < len(data); i++ {
 
 		count := 0
 		iterIndex := i
 		mirrorIndex := i-1
 		for mirrorIndex >=0 && iterIndex < len(data) {
-			if data[iterIndex] == data[mirrorIndex] {
+			nDiff := countDiff(data[iterIndex], data[mirrorIndex])
+			if nDiff <= tol {
+				count++
+			} else {
+				count = -1
+				break
+			}
+			iterIndex++
+			mirrorIndex--
+		}
+		if count > 0 {
+			bestIndices = append(bestIndices, i)
+		}
+	}
+	return bestIndices
+}
+
+func scanMirror(data []string, tol int) (int, int) {
+	max := 0
+	bestIdx := 0
+	for i := 1; i < len(data); i++ {
+
+		count := 0
+		iterIndex := i
+		mirrorIndex := i-1
+		for mirrorIndex >=0 && iterIndex < len(data) {
+			nDiff := countDiff(data[iterIndex], data[mirrorIndex])
+			if nDiff <= tol {
 				count++
 			} else {
 				count = -1
@@ -80,37 +110,72 @@ func scanMirror(data []string) (int, int) {
 	return bestIdx, max
 }
 
+func countDiff(a string, b string) int {
+	count := 0
+	for i := 0; i < len(a); i++ {
+		if a[i] != b[i] { count++ }
+	}
+	return count
+}
+
+func findSmudged(a []string) (int, int) {
+	for i := 0; i < len(a)-1; i++ {
+		for j := i+1; j < len(a); j++ {
+			count := countDiff(a[i], a[j])
+
+			if count == 1 {
+				return j, i
+			}
+		}
+	}
+
+	return 0, 0
+}
+
 func solution1(data [][]string) int {
 	out := 0
-	for idx, i := range data {
+	for _, i := range data {
 		columnsTransposed := transpose(i)
-		rowsBest, rMax := scanMirror(i)
-		columnsBest, cMax := scanMirror(columnsTransposed)
-		if columnsBest == -1 {
-			out += rowsBest * 100
-		} else if rowsBest == -1 {
-
-			out += columnsBest
-		} else if (columnsBest - cMax == 0 && rowsBest - rMax == 0) || (columnsBest + cMax == len(columnsTransposed) && rowsBest + rMax == len(i)) {
-			fmt.Printf("Found symmetrical mirroring at index: %d\nCols=%d (%d), Rows=%d (%d)\nProgram will panic.\n", idx, columnsBest, cMax, rowsBest, rMax)
-			panic("SYMMETRICAL?!")
-		} else if columnsBest - cMax == 0 || columnsBest + cMax == len(columnsTransposed) {
-			out += columnsBest
-		} else {
-			out += rowsBest * 100
+		rowsBest := scanMirror2(i, 0)
+		columnsBest := scanMirror2(columnsTransposed, 0)
+		for _, j := range columnsBest {
+			out += j
 		}
+		for _, j := range rowsBest {
+			out += j *100
+		}
+		// rowsBest, _ := scanMirror(i, 0)
+		// columnsBest, _ := scanMirror(columnsTransposed, 0)
+
+		// out += rowsBest * 100
+		// out += columnsBest
 	}
 	return out
 }
 
 func solution2(data [][]string) int {
-	return 0
+	out := 0
+	for _, i := range data {
+		columnsTransposed := transpose(i)
+		rowsBest := scanMirror2(i, 1)
+		columnsBest := scanMirror2(columnsTransposed, 1)
+		for _, j := range columnsBest {
+			out += j
+		}
+		for _, j := range rowsBest {
+			out += j *100
+		}
+	}
+
+	return out
 }
 
 
 func main() {
 	data := readLines("input1.txt")
-	fmt.Printf("Solution 1: %d\n", solution1(data))
-	fmt.Printf("Solution 2: %d\n", solution2(data))
+	s1 := solution1(data)
+	fmt.Printf("Solution 1: %d\n", s1)
+	data = readLines("input1.txt")
+	fmt.Printf("Solution 2: %d\n", solution2(data)-s1)
 }
 
