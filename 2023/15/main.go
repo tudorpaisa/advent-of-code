@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"strconv"
 )
 
 func readFileRaw(fname string) string {
@@ -59,8 +60,83 @@ func solution1(data []string) int {
 	return out
 }
 
+type Lens struct {
+	label string
+	slot int
+	focalLength int
+}
+
+func printLensConf(a [][]Lens) {
+	for i, lst := range a {
+		if len(lst) == 0 {
+			continue
+		}
+		fmt.Printf("Box %d:\n", i)
+		for _, l := range lst {
+			fmt.Printf("    %s = %d\n", l.label, l.focalLength)
+		}
+	}
+	fmt.Print("\n")
+}
+
+func searchLabel(a string, l []Lens) (int, bool) {
+	for i, j := range l {
+		if a == j.label { return i, true}
+	}
+	return -1, false
+}
+
+func configureLenses(data []string) [][]Lens {
+	m := make([][]Lens, 256)
+	for i := 0; i < len(m); i++ { m[i] = []Lens{} }
+
+	for _, i := range data {
+		label := ""
+
+		for j:=0; j<len(i); j++ {
+			if i[j] == '=' {
+				strFP := i[j+1:]
+				focalLen, err := strconv.Atoi(strFP)
+				if err != nil {panic(err)}
+
+				hashCode := hashString(label)
+
+				existingIdx, ok := searchLabel(label, m[hashCode])
+				if ok {
+					m[hashCode][existingIdx] = Lens{label, len(m[hashCode]), focalLen}
+				} else {
+					m[hashCode] = append(m[hashCode], Lens{label, len(m[hashCode]), focalLen})
+				}
+
+				break
+			} else if i[j] == '-' {
+				hashCode := hashString(label)
+				for a, b := range m[hashCode] {
+					if b.label == label {
+						m[hashCode] = append(m[hashCode][:a], m[hashCode][a+1:]...)
+					}
+				}
+			} else {
+				label += string(i[j])
+			}
+		}
+	}
+
+	return m
+}
+
 func solution2(data []string) int {
-	return 0
+	data = preprocess(data)
+	m := configureLenses(data)
+
+	out := 0
+	for boxNum := range m {
+		for i, lens := range m[boxNum] {
+			out += (boxNum + 1) * (i+1) * lens.focalLength
+		}
+	}
+
+	return out
 }
 
 
