@@ -28,9 +28,7 @@ public class Orchestrator : IOrchestrator
 
     public void RunExercise(int day, int part, bool runTest, string sourcePath)
     {
-        Console.WriteLine("##################################");
-        Console.WriteLine($"Executing day={day} part={part} tests={runTest}");
-        Console.WriteLine("##################################");
+        Printer.PrintRunDetails(day, part, runTest);
 
         var exercise = _exercises.GetValueOrDefault(day);
         if (exercise == null)
@@ -43,19 +41,18 @@ public class Orchestrator : IOrchestrator
         switch (part)
         {
             case 1:
-                queue.Add(() => exercise.ExecutePart1(BuildInputFilePath(day, part, runTest, sourcePath)));
+                queue.Add(() => Printer.PrintResult(exercise.ExecutePart1(BuildInputFilePath(day, part, runTest, sourcePath))));
                 break;
             case 2:
-                queue.Add(() => exercise.ExecutePart2(BuildInputFilePath(day, part, runTest, sourcePath)));
+                queue.Add(() => Printer.PrintResult(exercise.ExecutePart2(BuildInputFilePath(day, part, runTest, sourcePath))));
                 break;
             default:
-                queue.Add(() => exercise.ExecutePart1(BuildInputFilePath(day, 1, runTest, sourcePath)));
-                queue.Add(() => exercise.ExecutePart2(BuildInputFilePath(day, 2, runTest, sourcePath)));
+                queue.Add(() => Printer.PrintResult(exercise.ExecutePart1(BuildInputFilePath(day, 1, runTest, sourcePath))));
+                queue.Add(() => Printer.PrintResult(exercise.ExecutePart2(BuildInputFilePath(day, 2, runTest, sourcePath))));
                 break;
         }
 
         foreach (var i in queue) { i(); }
-
     }
 
     private static string BuildInputFilePath(int day, int part, bool runTest, string sourcePath)

@@ -1,12 +1,10 @@
-using AdventOfCode.Utilities;
-
 namespace AdventOfCode.Exercises;
 
 public class Exercise1 : IExercise
 {
     public int GetDay() => 1;
 
-    public void ExecutePart1(string inputFile)
+    public Result ExecutePart1(string inputFile)
     {
         var input = File.ReadAllLines(inputFile);
         // input.PrintLines();
@@ -36,13 +34,12 @@ public class Exercise1 : IExercise
         sums.Add(collection.Aggregate((a, b) => a + b));
         collection = [];
 
-        Helpers.PrintResult(sums.Max());
+        return new Result(sums.Max(), true);
     }
 
-    public void ExecutePart2(string inputFile)
+    public Result ExecutePart2(string inputFile)
     {
         var input = File.ReadAllLines(inputFile);
-        // input.PrintLines();
 
         List<List<int>> elvesFoods = [];
 
@@ -71,10 +68,8 @@ public class Exercise1 : IExercise
         collection = [];
 
         sums.Sort();
-        sums.PrintLines();
         var top3 = sums.TakeLast(3);
-        top3.PrintLines();
 
-        Helpers.PrintResult(top3.Aggregate((a, b) => a + b));
+        return new Result(top3.Aggregate((a, b) => a + b), true);
     }
 }
