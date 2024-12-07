@@ -15,7 +15,7 @@ public class Exercise7 : IExercise
             if (eval) evaluatable.Add(lhs);
         }
 
-        return new Result(evaluatable.Sum(), false);
+        return new Result(evaluatable.Sum(), true);
     }
 
     private (long, List<long>) ParseRow(string row)
@@ -79,6 +79,6 @@ public class Exercise7 : IExercise
             if (eval) evaluatable.Add(lhs);
         }
 
-        return new Result(evaluatable.Sum(), false);
+        return new Result(evaluatable.Sum(), true);
     }
 }
