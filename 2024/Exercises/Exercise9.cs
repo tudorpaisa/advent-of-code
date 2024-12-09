@@ -1,5 +1,3 @@
-using AdventOfCode.Utilities;
-
 namespace AdventOfCode.Exercises;
 
 public class Exercise9 : IExercise
@@ -47,7 +45,6 @@ public class Exercise9 : IExercise
                 for (var j = 1; j <= fileBlockSize; j++)
                 {
                     checksum += fileId * streamSize;
-                    // Console.WriteLine($"Check: { checksum } | Id: { fileId } | FS: {fileBlockSize} | SS: { streamSize } | IsF: {isFile} | it: {i}");
                     streamSize += 1;
                     debugString = debugString + fileId.ToString();
                 }
@@ -60,7 +57,6 @@ public class Exercise9 : IExercise
                 while (fileBlockSize > 0)
                 {
                     checksum += backFileId * streamSize;
-                    // Console.WriteLine($"Check: { checksum } | Id: { backFileId } | FS: {fileSizeFromBack} | SS: { streamSize } | IsF: {isFile}");
                     debugString = debugString + backFileId.ToString();
                     fileSizeFromBack -= 1;
                     diskMap[backIdx] = fileSizeFromBack;
@@ -78,10 +74,109 @@ public class Exercise9 : IExercise
                 diskMap[backIdx] = fileSizeFromBack;
             }
             isFile = !isFile;
-            // Console.WriteLine(string.Join(", ", diskMap));
         }
-        // Console.WriteLine(debugString);
         return checksum;
+    }
+
+    private List<(int, int)> BuildFileSize(List<int> diskMap)
+    {
+        List<(int, int)> fileSizes = new();
+
+        var id = 0;
+        for (var i = 0; i < diskMap.Count(); i += 2)
+        {
+            var val = diskMap[i];
+            fileSizes.Add((id, val));
+            id++;
+        }
+        fileSizes.Reverse();
+        return fileSizes;
+    }
+
+    private (int, int, int)? GetSizeToAdd(List<(int, int)> fileSizes, int maxSize)
+    {
+        for (var i = 0; i < fileSizes.Count(); i++)
+        {
+            var val = fileSizes[i];
+            if (val.Item2 <= maxSize)
+            {
+                return (val.Item1, val.Item2, i);
+            }
+        }
+        return null;
+    }
+
+    private long MoveWholeBlocks(List<int> diskMap, List<(int, int)> fileSizes)
+    {
+        var isFile = true;
+        var fileId = 0;
+        var backIdx = diskMap.Count() - 1;
+        var backFileId = diskMap.Count() / 2;
+
+        List<int> newDiskMap = [];
+        var debugString = "";
+
+        for (var i = 0; i < diskMap.Count(); i++)
+        {
+            var fileBlockSize = diskMap[i];
+
+            if (isFile)
+            {
+                if (fileBlockSize < 0)
+                {
+                    for (var j = 0; j < Math.Abs(fileBlockSize); j++)
+                    {
+                        newDiskMap.Add(0);
+                    }
+                }
+                else
+                {
+                    for (var j = 1; j <= fileBlockSize; j++)
+                    {
+                        newDiskMap.Add(fileId);
+                        debugString = debugString + fileId.ToString();
+                    }
+                    fileSizes.RemoveAt(fileSizes.Count() - 1);
+                }
+                fileId++;
+            }
+            else
+            {
+                var gapSize = diskMap[i];
+                while (gapSize != 0) // populate gap
+                {
+                    // find something with that size
+                    var toAdd = GetSizeToAdd(fileSizes, gapSize);
+                    if (!toAdd.HasValue) break;
+
+                    (var idToAdd, var sizeToAdd, var fsIdx) = toAdd.Value;
+
+                    // pop last item
+                    fileSizes.RemoveAt(fsIdx);
+
+                    // remove item from diskMap
+                    var dmIdx = Math.Max((idToAdd * 2), 0);
+                    diskMap[dmIdx] = -sizeToAdd;
+
+                    // shrink gapSize
+                    gapSize -= sizeToAdd;
+
+                    for (var j = 0; j < sizeToAdd; j++)
+                    {
+                        newDiskMap.Add(idToAdd);
+                        debugString = debugString + idToAdd.ToString();
+                    }
+                }
+
+                for (var g = 0; g < gapSize; g++)
+                {
+                    newDiskMap.Add(0);
+                }
+            }
+            isFile = !isFile;
+        }
+
+        return newDiskMap.Select((v, i) => (long)(i * v)).Sum();
     }
 
     public Result ExecutePart1(string inputFile)
@@ -92,13 +187,16 @@ public class Exercise9 : IExercise
 
         var res = MoveBlocks(diskMap);
 
-        return new Result(res, false);
+        return new Result(res, true);
     }
 
     public Result ExecutePart2(string inputFile)
     {
         var input = File.ReadAllLines(inputFile);
+        var diskMap = Parse(input);
+        var fileSizes = BuildFileSize(diskMap);
+        var res = MoveWholeBlocks(diskMap, fileSizes);
 
-        return new Result();
+        return new Result(res, false);
     }
 }
