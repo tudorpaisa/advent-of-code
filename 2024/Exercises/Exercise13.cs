@@ -101,7 +101,7 @@ public class Exercise13 : IExercise
             res.Add(Cramer(i));
         }
 
-        return new Result(res.Select(i => i.Item1 * 3 + i.Item2 * 1).Sum(), false);
+        return new Result(res.Select(i => i.Item1 * 3 + i.Item2 * 1).Sum(), true);
     }
 
     public Result ExecutePart2(string inputFile)
@@ -115,6 +115,6 @@ public class Exercise13 : IExercise
             res.Add(Cramer(i));
         }
 
-        return new Result(res.Select(i => i.Item1 * 3 + i.Item2 * 1).Sum(), false);
+        return new Result(res.Select(i => i.Item1 * 3 + i.Item2 * 1).Sum(), true);
     }
 }
