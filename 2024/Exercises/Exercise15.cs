@@ -10,40 +10,16 @@ public class Exercise15 : IExercise
         public int Y { get; set; }
     }
 
-    private List<IMapObject> GetMovableFromItem(List<List<IMapObject?>> map, IMapObject obj, Coords dir)
+    private Dictionary<char, (int Y, int X)> directions = new()
     {
-        List<IMapObject> movable = new();
-        for (var i = 0; i < obj.Width; i++)
-        {
-            var nextX = obj.Position.X + dir.X  + i;
-            var nextY = obj.Position.Y + dir.Y;
-            Console.WriteLine($"{nextX} {nextY}");
-            if (map[nextY][nextX] == null)
-            {
-                continue;
-            }
-            var nextItem = map[nextY][nextX];
-            if (nextItem.Movable)
-            {
-                if (nextItem.Position.X == obj.Position.X && nextItem.Position.Y == obj.Position.Y) { continue; }
-                if (movable.Count() > 0)
-                {
-                    if (movable.Last().Position.X != nextItem.Position.X && movable.Last().Position.Y != nextItem.Position.Y)
-                    {
-                        movable.Add(nextItem);
-                    }
+        { '>', ( 0,  1) },
+        { '<', ( 0, -1) },
+        { '^', (-1,  0) },
+        { 'v', ( 1,  0) },
+    };
 
-                }
-                else
-                {
-                    movable.Add(nextItem);
-                }
-            }
-        }
-        Console.WriteLine(movable.Count());
-
-        return movable;
-    }
+    private bool IsHorizontal(char c) => "<>".Contains(c);
+    private bool IsVertical(char c) => "^v".Contains(c);
 
     private IMapObject? GetAdjacentMovable(List<List<IMapObject?>> map, int x, int y)
     {
@@ -143,7 +119,14 @@ public class Exercise15 : IExercise
             var newX = Position.X + x;
             var newY = Position.Y + y;
 
-            if (map[newY][newX] != null && map[newY][newX + 1] != null) return Position;
+            if (x < 0)
+            {
+                if (map[newY][newX] != null) return Position;
+            }
+            else
+            {
+                if (map[newY][newX] != null || map[newY][newX + 1] != null) return Position;
+            }
 
             Position.X = newX;
             Position.Y = newY;
@@ -258,44 +241,6 @@ public class Exercise15 : IExercise
         return (parsed, directions, robot, boxes);
     }
 
-    private void PrintMap(List<List<IMapObject?>> map)
-    {
-        foreach( var row in map )
-        {
-            for ( var idx = 0; idx < row.Count(); idx++ )
-            {
-                var i = row[idx];
-
-                if (i == null)
-                {
-                    Console.Write(" ");
-                }
-                else if (i.GetType() == typeof(Robot))
-                {
-                    Console.Write("@");
-                }
-                else if (i.GetType() == typeof(Box))
-                {
-                    Console.Write("O");
-                }
-                else if (i.GetType() == typeof(WideBox) && i.Position.X == idx)
-                {
-                    Console.Write("[");
-                }
-                else if (i.GetType() == typeof(WideBox) && i.Position.X == idx - 1)
-                {
-                    Console.Write("]");
-                }
-                else if (i.GetType() == typeof(Wall))
-                {
-                    Console.Write("#");
-                }
-            }
-            Console.Write("\n");
-        }
-        Console.Write("-------------------\n");
-    }
-
     private string[] ExpandMap(string[] input)
     {
         List<string> expandedMap = new();
@@ -378,50 +323,158 @@ public class Exercise15 : IExercise
         return new Result(boxes.Select(b => 100 * b.Position.Y + b.Position.X).Sum(), true);
     }
 
+    private (int Y, int X) GetRobotCoords(List<List<string>> map)
+    {
+        for (var i = 0; i < map.Count(); i++)
+        {
+            for (var j = 0; j < map[0].Count(); j++)
+            {
+                if ( map[i][j] == "@" )
+                {
+                    return (i, j);
+                }
+            }
+        }
+        return (-1, -1);
+    }
+
+    private (string[] Map, string Movements) SplitMapDirections(string[] input)
+    {
+        for (var i = 0; i < input.Count(); i++)
+        {
+            if (input[i] == "")
+            {
+                return (input[0..i], string.Join("", input[(i+1)..input.Count()]));
+            }
+        }
+        return (new string[] {}, "");
+    }
+
+    private (int Y, int X) FindRestOfBox(List<List<string>> map, int Y, int X)
+    {
+        if (map[Y][X] == "[") return (Y, X + 1);
+        return (Y, X - 1);
+    }
+
+    private List<(int Y, int X)> FindBoxes(List<List<string>> map)
+    {
+        List<(int Y, int X)> boxes = new();
+
+        for (var i = 0; i < map.Count(); i++)
+        {
+            for (var j = 0; j < map[0].Count(); j++)
+            {
+                if (map[i][j] == "[")
+                {
+                    boxes.Add((i, j));
+                }
+            }
+        }
+        return boxes;
+    }
+
     public Result ExecutePart2(string inputFile)
     {
         var input = File.ReadAllLines(inputFile);
-        var expandedMap = ExpandMap(input);
-        Console.WriteLine(string.Join("\n", expandedMap));
-        (var map, var directions, var robot, var boxes) = Parse(expandedMap);
+        (var smallMap, var movements) = SplitMapDirections(input);
+        var map = ExpandMap(smallMap).Select(i => i.Select(c => c.ToString()).ToList()).ToList();
+        (var y, var x) = GetRobotCoords(map);
+        map[y][x] = ".";
 
-        foreach (var dir in directions)
+        foreach (var i in movements)
         {
-            List<IMapObject> itemsToMove = [robot];
-            robot.Clear(map);
-            List<IMapObject> moveableChecks = [robot];
+            var dir = directions[i];
+            var newX = x + dir.X;
+            var newY = y + dir.Y;
 
-            while (moveableChecks.Count() > 0)
+            if ( map[newY][newX] == "." )
             {
-                var item = moveableChecks.First();
-                // Console.WriteLine($"{item.Position.X} {item.Position.Y}");
-                moveableChecks.RemoveAt(0);
-
-                var nextX = item.Position.X + dir.X;
-                var nextY = item.Position.Y + dir.Y;
-
-                var next = GetMovableFromItem(map, item, dir);
-                if (next.Count() > 0)
+                x = newX;
+                y = newY;
+            }
+            else if ( map[newY][newX] == "#" ) continue;
+            else
+            {
+                if (IsHorizontal(i))
                 {
-                    foreach( var x in next )
+                    HashSet<int> marked = new();
+
+                    var searchX = newX;
+                    while (true)
                     {
-                        if (x.Position.X == item.Position.X && x.Position.Y == item.Position.Y) continue;
-                        moveableChecks.AddRange(next);
-                        itemsToMove = itemsToMove.Prepend(x).ToList();
-                        x.Clear(map);
+                        searchX += dir.X;
+                        if (map[newY][searchX] == "#")
+                        {
+                            marked = new();
+                            break;
+                        }
+                        else if (map[newY][searchX] == ".")
+                        {
+                            map[newY][searchX] = i == '<' ? "[" : "]";
+                            x += dir.X;
+                            y += dir.Y;
+                            map[y][x] = ".";
+                            break;
+                        }
+                        else if (map[newY][searchX] == "[" || map[newY][searchX] == "]")
+                        {
+                            marked.Add(searchX);
+                        }
+                    }
+
+                    if (marked.Count() == 0) continue;
+
+                    var markedList = marked.ToList();
+                    var xVal = markedList.First();
+                    map[y][xVal] = i == '>' ? "[" : "]";
+                    for (var idx = 1; idx < markedList.Count(); idx++)
+                    {
+                        var v = markedList[idx];
+                        map[y][v] = map[y][xVal] == "]" ? "[" : "]";
+                        xVal = v;
                     }
                 }
-            }
+                if (IsVertical(i))
+                {
+                    List<(int Y, int X)> connected = new();
+                    connected.Add((newY, newX));
+                    connected.Add(FindRestOfBox(map, newY, newX));
 
-            foreach (var i in itemsToMove)
-            {
-                i.MoveBy(map, dir.X, dir.Y);
-                i.Insert(map);
+                    var it = 0;
+                    while (it < connected.Count())
+                    {
+                        var connBox = connected[it];
+                        // if (map[connBox.Y + dir.Y][connBox.X] == "#")
+                        // {
+                        //     connected = [];
+                        //     break;
+                        // }
+                        if (map[connBox.Y + dir.Y][connBox.X] == "[" || map[connBox.Y + dir.Y][connBox.X] == "]")
+                        {
+                            connected.AddRange([(connBox.Y + dir.Y, connBox.X), FindRestOfBox(map, connBox.Y + dir.Y, connBox.X)]);
+                        }
+                        it++;
+                    }
+                    if (connected.Where(t => map[t.Y + dir.Y][t.X] == "#").Any())
+                    {
+                        continue;
+                    }
+                    connected = connected.Distinct().ToList();
+                    connected.Sort();
+                    if (dir.Y >= 0) connected.Reverse();
+                    foreach (var c in connected)
+                    {
+                        map[c.Y + dir.Y][c.X] = map[c.Y][c.X];
+                        map[c.Y][c.X] = ".";
+                    }
+                    x = newX;
+                    y = newY;
+                }
             }
-
-            PrintMap(map);
         }
 
-        return new Result();
+        var allBoxes = FindBoxes(map);
+
+        return new Result(allBoxes.Select(c => c.Y * 100 + c.X).Sum(), false);
     }
 }
