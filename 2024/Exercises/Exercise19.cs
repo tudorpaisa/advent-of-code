@@ -1,5 +1,3 @@
-using AdventOfCode.Utilities;
-
 namespace AdventOfCode.Exercises;
 
 public class Exercise19 : IExercise
