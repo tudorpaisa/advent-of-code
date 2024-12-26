@@ -125,7 +125,7 @@ public class Exercise18 : IExercise
         }
 
 
-        return new Result(nSteps, false);
+        return new Result(nSteps, true);
     }
 
     public Result ExecutePart2(string inputFile)
@@ -150,6 +150,6 @@ public class Exercise18 : IExercise
             }
         }
 
-        return new Result(solution, false);
+        return new Result(solution, true);
     }
 }

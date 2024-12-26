@@ -122,7 +122,7 @@ public class Exercise20 : IExercise
         var end = FindWhereString(map, "E");
         var path = FindShortestPath(map, start, end, new());
 
-        return new Result(GetCheats(map, path, 100, 2), false);
+        return new Result(GetCheats(map, path, 100, 2), true);
     }
 
     public Result ExecutePart2(string inputFile)
@@ -133,6 +133,6 @@ public class Exercise20 : IExercise
         var end = FindWhereString(map, "E");
         var path = FindShortestPath(map, start, end, new());
 
-        return new Result(GetCheats(map, path, 100, 20), false);
+        return new Result(GetCheats(map, path, 100, 20), true);
     }
 }

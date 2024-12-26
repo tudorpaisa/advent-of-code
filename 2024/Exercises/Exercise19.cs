@@ -116,7 +116,7 @@ public class Exercise19 : IExercise
             if (CanBuild(w, trie, trie)) count++;
         }
 
-        return new Result(count, false);
+        return new Result(count, true);
     }
 
     private Dictionary<string, long> memory = [];
@@ -151,6 +151,6 @@ public class Exercise19 : IExercise
             count += CountArrangements(w);
         }
 
-        return new Result(count, false);
+        return new Result(count, true);
     }
 }

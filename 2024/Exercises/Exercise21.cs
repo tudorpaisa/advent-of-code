@@ -122,6 +122,6 @@ public class Exercise21 : IExercise
     {
         var input = File.ReadAllLines(inputFile);
 
-        return new Result(Complexity(input.ToList(), 25), false);
+        return new Result(Complexity(input.ToList(), 25), true);
     }
 }
