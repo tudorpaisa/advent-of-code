@@ -1,66 +1,7 @@
-using AdventOfCode.Utilities;
-
 namespace AdventOfCode.Exercises;
 
 public class Exercise23 : IExercise
 {
-
-    private class UF
-    {
-        public List<string> Sets;
-        public List<int> Parents;
-        public UF(int n)
-        {
-            Sets = new List<string>();
-            Parents = new List<int>();
-        }
-
-        public void MakeSet(string v)
-        {
-            var i = Sets.Count();
-            Sets.Add(v);
-            Parents.Add(i);
-        }
-
-        public (string Value, int Index) FindSet(string v)
-        {
-            int i = Sets.IndexOf(v);
-
-            while (Parents[i] != i)
-            {
-                i = Parents[i];
-            }
-
-            return (Sets[i], i);
-        }
-
-        public void UnionSets(string a, string b)
-        {
-            var aParent = FindSet(a);
-            var bParent = FindSet(b);
-            if (aParent.Value != bParent.Value)
-            {
-                Parents[aParent.Index] = bParent.Index;
-            }
-
-            var idx = Sets.IndexOf(a);
-            while (idx != bParent.Index)
-            {
-                var temp = Parents[idx];
-                Parents[idx] = bParent.Index;
-                idx = temp;
-            }
-            idx = Sets.IndexOf(b);
-            while (idx != bParent.Index)
-            {
-                var temp = Parents[idx];
-                Parents[idx] = bParent.Index;
-                idx = temp;
-            }
-        }
-
-    }
-
     public int GetDay() => 23;
 
     private List<List<string>> Parse(string[] input)
